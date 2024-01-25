@@ -3,15 +3,21 @@ package com.belajar.loginregister.service.impl;
 import com.belajar.loginregister.constan.ERole;
 import com.belajar.loginregister.entity.Role;
 import com.belajar.loginregister.entity.UserCredential;
+import com.belajar.loginregister.model.request.LoginRequest;
 import com.belajar.loginregister.model.request.RegisterRequest;
+import com.belajar.loginregister.model.request.UserIdentityRequest;
 import com.belajar.loginregister.model.response.RegisterResponse;
 import com.belajar.loginregister.repository.UserCredentialRepository;
-import com.belajar.loginregister.service.AuthService;
-import com.belajar.loginregister.service.RoleService;
+import com.belajar.loginregister.security.JwtUtil;
+import com.belajar.loginregister.service.*;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +38,11 @@ public class AuthServiceImpl implements AuthService {
     private final UserCredentialRepository userCredentialRepository;
     private final PasswordEncoder passwordEncoder;
     private final RoleService roleService;
+    private final AdminService adminService;
+    private final TeacherService teacherService;
+    private final StudentService studentService;
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtil jwtUtil;
 
 
 
@@ -74,6 +85,13 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         UserCredential userCredential = userCredentialRepository.saveAndFlush(buildUserCredential);
+        adminService.create(
+                UserIdentityRequest.builder().firstName(request.getFirstName())
+                        .lastName(request.getLastName()).gender(request.getGender())
+                        .phoneNumber(request.getPhoneNumber()).userCredential(userCredential)
+                        .build()
+        );
+
         return RegisterResponse.builder()
                 .email(userCredential.getEmail())
                 .roles(userCredential.getRoles().stream().map(role -> role.getRole().name()).toList())
@@ -96,6 +114,14 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         UserCredential userCredential = userCredentialRepository.saveAndFlush(buildUserCredential);
+        teacherService.create(
+                UserIdentityRequest.builder()
+                        .firstName(request.getFirstName()).lastName(request.getLastName())
+                        .gender(request.getGender()).phoneNumber(request.getPhoneNumber())
+                        .userCredential(userCredential).build()
+        );
+
+
         return RegisterResponse.builder()
                 .email(userCredential.getEmail())
                 .roles(userCredential.getRoles().stream().map(role -> role.getRole().name()).toList())
@@ -116,10 +142,31 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         UserCredential userCredential = userCredentialRepository.saveAndFlush(buildUserCredential);
+        studentService.create(
+                UserIdentityRequest.builder()
+                        .firstName(request.getFirstName())
+                        .lastName(request.getLastName())
+                        .gender(request.getGender())
+
+                        .phoneNumber(request.getPhoneNumber())
+                        .userCredential(userCredential)
+                        .build()
+        );
+
         return RegisterResponse.builder()
                 .email(userCredential.getEmail())
                 .roles(userCredential.getRoles().stream().map(role -> role.getRole().name()).toList())
                 .build();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public String login(LoginRequest request) {
+        Authentication authenticationToken = new UsernamePasswordAuthenticationToken(request.getEmail(),request.getPassword());
+        Authentication authentication = authenticationManager.authenticate(authenticationToken);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        UserCredential userCredential =(UserCredential) authentication.getPrincipal();
+        return jwtUtil.generateToken(userCredential);
     }
 
 }

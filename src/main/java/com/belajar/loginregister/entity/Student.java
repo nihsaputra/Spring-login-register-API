@@ -21,4 +21,8 @@ public class Student {
     private String gender;
     private String phoneNumber;
 
+    @OneToOne
+    @JoinColumn(name = "user_id",referencedColumnName = "id")
+    private UserCredential userCredential;
+
 }

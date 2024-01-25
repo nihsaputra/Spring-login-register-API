@@ -1,19 +1,17 @@
 package com.belajar.loginregister.model.request;
 
+import com.belajar.loginregister.entity.UserCredential;
 import lombok.*;
 
 @Setter
 @Getter
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class RegisterRequest {
-
-    private String email;
-    private String password;
+@Builder
+public class UserIdentityRequest {
     private String firstName;
     private String lastName;
     private String gender;
     private String phoneNumber;
-
+    private UserCredential userCredential;
 }

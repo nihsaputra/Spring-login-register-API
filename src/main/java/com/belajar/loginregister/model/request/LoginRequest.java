@@ -4,16 +4,10 @@ import lombok.*;
 
 @Setter
 @Getter
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class RegisterRequest {
-
+@Builder
+public class LoginRequest {
     private String email;
     private String password;
-    private String firstName;
-    private String lastName;
-    private String gender;
-    private String phoneNumber;
-
 }
